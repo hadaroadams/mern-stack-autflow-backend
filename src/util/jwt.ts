@@ -1,19 +1,25 @@
 import { Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
+import { TokenUser } from "../interfaces/UserRequest";
+
+interface Payload extends JwtPayload {
+  user: TokenUser;
+  refreshToken?: string;
+}
 
 interface AttachCookiesToResponse {
   res: Response;
-  user: JwtPayload;
+  user: TokenUser;
   refreshToken: string;
 }
 
-const createJWT = ({ payload }: { payload: JwtPayload }) => {
+const createJWT = ({ payload }: { payload: Payload }) => {
   const token = jwt.sign(payload, process.env.JWT_SECRET_TOKEN!);
   return token;
 };
 
-const isTokenValid = (token: string) =>
-  jwt.verify(token, process.env.JWT_SECRET_TOKEN!);
+const isTokenValid = (token: string): Payload =>
+  jwt.verify(token, process.env.JWT_SECRET_TOKEN!) as Payload;
 
 const attachCookiesToResponse = ({
   res,
@@ -31,7 +37,7 @@ const attachCookiesToResponse = ({
     signed: true,
     expires: new Date(Date.now() + oneDay),
   });
-  res.cookie("refreshToken", accessTokenJWT, {
+  res.cookie("refreshToken", refreshTokenJWT, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     signed: true,

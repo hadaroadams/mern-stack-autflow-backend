@@ -10,9 +10,9 @@ interface User {
   verificationToken: string;
   isVerified: boolean;
   verified: Date;
-  passwordToken: string;
-  passwordTokenExpirationDate: Date;
-  comparePassword: (candidatesPassword: string) =>boolean;
+  passwordToken: string | null;
+  passwordTokenExpirationDate: Date | null | undefined;
+  comparePassword: (candidatesPassword: string) => boolean;
 }
 
 const UserSchema = new Schema<User>({
@@ -61,7 +61,7 @@ const UserSchema = new Schema<User>({
 UserSchema.pre("save", async function () {
   console.log(this.modifiedPaths());
   console.log(this.isModified("name"));
-  if (!this.isModified) return;
+  if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(16);
   const hash = bcrypt.hash(this.password, salt);
   this.password = await hash;

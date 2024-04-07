@@ -8,6 +8,10 @@ import {
 } from "../util";
 import { StatusCodes } from "http-status-codes";
 import Token from "../models/Token";
+import { CustomRequest } from "../interfaces/UserRequest";
+import { sendResendPasswordEmail } from "../util/sendResetPasswordEmail";
+// import { createHash } from "crypto";
+import { hashString } from "../util/createHash";
 
 const crypto = require("crypto");
 
@@ -47,10 +51,12 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
 const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
   const { token, email } = req.body;
   const user = await User.findOne({ email });
+
   if (!user) next(new Unauthenticated("Verification failed"));
 
   if (user?.verificationToken !== token)
     next(new Unauthenticated("Verification failed"));
+
   user!.isVerified = true;
   user!.verificationToken = "";
   await user?.save();
@@ -65,7 +71,8 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
   console.log(user);
   if (!user) return next(new NotFound("Invalid credentials1"));
 
-  const isPasswordCorrect = user?.comparePassword(password);
+  const isPasswordCorrect = await user?.comparePassword(password);
+  console.log(isPasswordCorrect);
   if (!isPasswordCorrect)
     return next(new Unauthenticated("Invalid credential2"));
   if (!user?.isVerified)
@@ -87,6 +94,7 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
   }
   refreshToken = crypto.randomBytes(40).toString("hex");
   const userAgent = req.headers["user-agent"];
+  console.log(req.header);
   const ip = req.ip;
   const userToken = { refreshToken, ip, userAgent, user: user?._id };
   console.log({ userAgent, ip, userToken });
@@ -97,5 +105,83 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
   res.status(StatusCodes.OK).json({ user: tokenUser });
 };
 
+const logout = async (req: CustomRequest, res: Response) => {
+  await Token.findOneAndDelete({ user: req.user?.userId });
+  res.cookie("accessToken", "logout", {
+    httpOnly: true,
+    expires: new Date(Date.now()),
+  });
+  res.cookie("refreshToken", "logout", {
+    httpOnly: true,
+    expires: new Date(Date.now()),
+  });
+  res.status(StatusCodes.OK).json({ msg: "user is logged out " });
+};
 
-export { register, verifyEmail, login };
+const forgottenPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { email } = req.body;
+  if (!email) {
+    return next(new BadRequest("please provide email"));
+  }
+  const user = await User.findOne({ email });
+
+  if (user) {
+    const passwordToken = crypto.randomBytes(70).toString("hex");
+
+    const origin = "http://localhost:5000";
+
+    await sendResendPasswordEmail({
+      name: user?.name!,
+      email: user?.email!,
+      origin,
+      token: passwordToken,
+    });
+
+    const tenMinutes = 1000 * 60 * 60;
+    const passwordTokenExpirationDate = new Date(Date.now() + tenMinutes);
+    user.passwordToken = hashString(passwordToken);
+    user.passwordTokenExpirationDate = passwordTokenExpirationDate;
+    await user.save();
+
+    res
+      .status(StatusCodes.OK)
+      .json({ msg: "please check your email for reset pasword link" });
+  }
+};
+
+const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { token, email, password } = req.body;
+  if (!token || !email || !password)
+    next(new BadRequest("Please provide all values"));
+  const user = await User.findOne({ email });
+  if (user) {
+    const currentDate = new Date();
+
+    if (
+      user.passwordToken === hashString(token) &&
+      user.passwordTokenExpirationDate! > currentDate
+    ) {
+      user.password = password;
+      user.passwordToken = null;
+      user.passwordTokenExpirationDate = null;
+      await user.save();
+    }
+  }
+  res.send("reset password");
+};
+export {
+  register,
+  verifyEmail,
+  login,
+  logout,
+  resetPassword,
+  forgottenPassword,
+};

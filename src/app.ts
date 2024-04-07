@@ -17,7 +17,7 @@ import { env } from "process";
 
 connectDB();
 
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(env.PORT) || 5000;
 const app: Application = express();
 
 app.use(express.json());
@@ -25,19 +25,19 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 app.use(helmet());
 app.use(ExpressMongoSanitize());
-app.use(
-  limiter({
-    windowMs: 15 * 60 * 1000,
-    max: 10,
-  })
-);
+// app.use(
+//   limiter({
+//     windowMs: 15 * 60 * 1000,
+//     max: 10,
+//   })
+// );
 app.use(cookieParser(process.env.JWT_SECRET_TOKEN));
 app.use(fileUpload({ useTempFiles: true }));
 
 app.use("/api/v1/auth", authRoute);
 
-app.use(errorHandler);
 app.use(notFound);
+app.use(errorHandler);
 
 mongoose.connection.once("open", () => {
   console.log("connected to mongoDB");
