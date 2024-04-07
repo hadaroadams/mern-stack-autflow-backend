@@ -24,6 +24,7 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
   if (emailAlreadyExist) return next(new BadRequest("Email already exist"));
 
   const isFirstAccount = (await User.countDocuments({})) === 0;
+  console.log(`isFirstAccount:${isFirstAccount}`)
   const role = isFirstAccount ? "admin" : "user";
 
   const verificationToken = crypto.randomBytes(40).toString("hex");

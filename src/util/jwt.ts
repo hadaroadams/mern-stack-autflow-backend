@@ -10,7 +10,7 @@ interface Payload extends JwtPayload {
 interface AttachCookiesToResponse {
   res: Response;
   user: TokenUser;
-  refreshToken: string;
+  refreshToken?: string;
 }
 
 const createJWT = ({ payload }: { payload: Payload }) => {

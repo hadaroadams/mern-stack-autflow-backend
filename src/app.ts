@@ -14,6 +14,7 @@ import errorHandler from "./middlewares/errorHandler";
 import { notFound } from "./middlewares/notFound";
 import authRoute from "./routers/authRoutes";
 import { env } from "process";
+import userRoute from "./routers/userRoutes";
 
 connectDB();
 
@@ -35,6 +36,7 @@ app.use(cookieParser(process.env.JWT_SECRET_TOKEN));
 app.use(fileUpload({ useTempFiles: true }));
 
 app.use("/api/v1/auth", authRoute);
+app.use("/api/v1/users", userRoute);
 
 app.use(notFound);
 app.use(errorHandler);

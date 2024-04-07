@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-import { Unauthenticated } from "../errors";
+import { Unauthenticated, Unauthorized } from "../errors";
 import { attachCookiesToResponse, isTokenValid } from "../util";
 import Token from "../models/Token";
 import { CustomRequest } from "../interfaces/UserRequest";
+
+type Role = "admin" | "user";
 
 const authenticateUser = async (
   req: CustomRequest,
@@ -39,4 +41,14 @@ const authenticateUser = async (
   }
 };
 
-export { authenticateUser };
+const authorizePermissions = (...roles: Role[]) => {
+  return (req: CustomRequest, res: Response, next: NextFunction) => {
+    console.log(req.user);
+    if (!roles.includes(req.user?.role!)) {
+      throw new Unauthorized("Unauthorized to access this Route");
+    }
+    next();
+  };
+};
+
+export { authenticateUser, authorizePermissions };
