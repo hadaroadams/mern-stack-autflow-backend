@@ -12,9 +12,10 @@ import mongoose from "mongoose";
 import { connectDB } from "./config/dbConnect";
 import errorHandler from "./middlewares/errorHandler";
 import { notFound } from "./middlewares/notFound";
-import authRoute from "./routers/authRoutes";
 import { env } from "process";
+import authRoute from "./routers/authRoutes";
 import userRoute from "./routers/userRoutes";
+import productRoute from "./routers/productRoutes";
 
 connectDB();
 
@@ -37,6 +38,7 @@ app.use(fileUpload({ useTempFiles: true }));
 
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/users", userRoute);
+app.use("/api/v1/products", productRoute);
 
 app.use(notFound);
 app.use(errorHandler);

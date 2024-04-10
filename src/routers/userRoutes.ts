@@ -21,7 +21,6 @@ Routes.get(
 );
 
 Routes.get("/showMe", authenticateUser, showCurrentUser);
-
 Routes.patch("updateUser", authenticateUser, updateUser);
 Routes.patch("updateUserPassword", authenticateUser, updateUserPassword);
 Routes.get("/:id", authenticateUser, getSingleUser);
