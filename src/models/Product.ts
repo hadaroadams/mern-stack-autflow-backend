@@ -71,3 +71,7 @@ const ProductSchema = new Schema(
 );
 
 export default model("Product", ProductSchema);
+
+ProductSchema.methods.remove=()=>{
+    
+}
